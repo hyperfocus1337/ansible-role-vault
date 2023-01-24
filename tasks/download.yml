@@ -1,0 +1,24 @@
+---
+- name: Make directory to store Vault binary
+  ansible.builtin.file:
+    path: "/home/{{ vault_user }}/downloads/vault-{{ vault_version }}"
+    owner: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    state: directory
+
+- name: Download Vault {{ vault_version }} binary
+  ansible.builtin.unarchive:
+    src: "https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_linux_amd64.zip"
+    dest: "/home/{{ vault_user }}/downloads/vault-{{ vault_version }}"
+    creates: "/home/{{ vault_user }}/downloads/vault-{{ vault_version }}/vault"
+    owner: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    remote_src: yes
+
+- name: Rename Vault {{ vault_version }} binary to include version
+  ansible.builtin.copy:
+    src: "/home/{{ vault_user }}/downloads/vault-{{ vault_version }}/vault"
+    dest: "/home/{{ vault_user }}/downloads/vault-{{ vault_version }}/vault-{{ vault_version }}"
+    owner: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    remote_src: yes

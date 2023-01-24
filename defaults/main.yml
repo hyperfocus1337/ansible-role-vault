@@ -1,0 +1,19 @@
+---
+vault_user: vault
+vault_group: vault
+vault_mode: "0644"
+
+vault_path: "/usr/bin/vault"
+
+vault_directories:
+  - audit
+  - bin
+  - certs
+  - etc
+  - etc/vault.d
+  - raft
+  - raft/data
+  - vault-automatic-snapshots
+  - vault-manual-snapshots
+
+vault_version: "1.12.2"

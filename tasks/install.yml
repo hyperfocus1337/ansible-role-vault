@@ -1,0 +1,114 @@
+---
+- name: Place vault.sh profile script
+  ansible.builtin.template:
+    src: vault.sh.j2
+    dest: /etc/profile.d/vault.sh
+    owner: root
+    group: root
+    mode: "0644"
+    backup: yes
+
+- name: Create Vault directory
+  ansible.builtin.file:
+    path: "{{ vault_path }}"
+    state: directory
+    owner: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    mode: "{{ vault_mode }}"
+
+- name: Create directory in Vault directory
+  ansible.builtin.file:
+    path: "{{ vault_path }}/{{ item }}"
+    state: directory
+    owner: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    mode: "{{ vault_mode }}"
+  loop: "{{ vault_directories }}"
+
+- name: Copy Vault {{ vault_version }} binary
+  ansible.builtin.copy:
+    src: "/home/{{ vault_user }}/downloads/vault-{{ vault_version }}/vault-{{ vault_version }}"
+    dest: "{{ vault_path }}/bin/vault-{{ vault_version }}"
+    owner: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    mode: "0775"
+    remote_src: yes
+  notify:
+    - Step down
+
+- name: Flush handlers (step down vault)
+  ansible.builtin.meta: flush_handlers
+
+- name: Register if vault.service file exists
+  ansible.builtin.stat:
+    path: "/etc/systemd/system/vault.service"
+  register: systemd_service_file
+
+- name: Stopping vault in case vault.service file exists
+  ansible.builtin.debug:
+    msg: "Stopping vault"
+  when: systemd_service_file.stat.exists
+  notify:
+    - Stop vault
+
+- name: Flush handlers (stop vault)
+  ansible.builtin.meta: flush_handlers
+
+- name: Symlink Vault {{ vault_version }} binary
+  ansible.builtin.copy:
+    src: "{{ vault_path }}/bin/vault-{{ vault_version }}"
+    dest: "{{ vault_path }}/bin/vault"
+    owner: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    mode: "0775"
+    remote_src: yes
+    force: true
+
+- name: Place Vault configuration
+  ansible.builtin.template:
+    src: vault.hcl.j2
+    dest: "{{ vault_path }}/etc/vault.d/vault.hcl"
+    owner: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    mode: "0640"
+    backup: yes
+  notify:
+    - Restart vault
+
+- name: Place Vault license file
+  ansible.builtin.copy:
+    content: "{{ vault_license }}"
+    dest: "{{ vault_path }}/etc/vault.d/vault.hclic"
+    owner: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    mode: "0400"
+    backup: yes
+  notify:
+    - Restart vault
+
+- name: Get information on Vault user
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ vault_user }}"
+
+- name: Copy Vault service file
+  ansible.builtin.template:
+    src: vault.service.j2
+    dest: "/etc/systemd/system/vault.service"
+    owner: root
+    group: root
+    mode: "0644"
+    backup: yes
+  notify:
+    - Daemon reload
+
+- name: Enable and start the Vault service
+  ansible.builtin.systemd:
+    name: vault
+    state: started
+    enabled: true
+  notify:
+    - Unseal vault
+
+- name: Flush handlers (restart vault, systemd reload daemon, unseal vault)
+  meta: flush_handlers
