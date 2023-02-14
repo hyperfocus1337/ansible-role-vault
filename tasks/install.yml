@@ -112,3 +112,19 @@
 
 - name: Flush handlers (restart vault, systemd reload daemon, unseal vault)
   meta: flush_handlers
+
+- name: Create Vault log directory
+  ansible.builtin.file:
+    path: "{{ vault_log_path }}"
+    state: directory
+    owner: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    mode: "{{ vault_mode }}"
+
+- name: Create Vault audit log file
+  ansible.builtin.file:
+    path: "{{ vault_log_path }}/audit.log"
+    state: touch
+    owner: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    mode: "{{ vault_mode }}"
