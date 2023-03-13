@@ -6,7 +6,7 @@
     owner: root
     group: root
     mode: "0644"
-    backup: yes
+    backup: true
 
 - name: Create Vault directory
   ansible.builtin.file:
@@ -25,14 +25,14 @@
     mode: "{{ vault_mode }}"
   loop: "{{ vault_directories }}"
 
-- name: Copy Vault {{ vault_version }} binary
+- name: Copy Vault binary {{ vault_version }}
   ansible.builtin.copy:
     src: "/home/{{ vault_user }}/downloads/vault-{{ vault_version }}/vault-{{ vault_version }}"
     dest: "{{ vault_path }}/bin/vault-{{ vault_version }}"
     owner: "{{ vault_user }}"
     group: "{{ vault_group }}"
     mode: "0775"
-    remote_src: yes
+    remote_src: true
   notify:
     - Step down
 
@@ -54,14 +54,14 @@
 - name: Flush handlers (stop vault)
   ansible.builtin.meta: flush_handlers
 
-- name: Symlink Vault {{ vault_version }} binary
+- name: Symlink Vault binary {{ vault_version }}
   ansible.builtin.copy:
     src: "{{ vault_path }}/bin/vault-{{ vault_version }}"
     dest: "{{ vault_path }}/bin/vault"
     owner: "{{ vault_user }}"
     group: "{{ vault_group }}"
     mode: "0775"
-    remote_src: yes
+    remote_src: true
     force: true
 
 - name: Place Vault configuration
@@ -71,7 +71,7 @@
     owner: "{{ vault_user }}"
     group: "{{ vault_group }}"
     mode: "0640"
-    backup: yes
+    backup: true
   notify:
     - Restart vault
 
@@ -82,7 +82,7 @@
     owner: "{{ vault_user }}"
     group: "{{ vault_group }}"
     mode: "0400"
-    backup: yes
+    backup: true
   notify:
     - Restart vault
 
@@ -98,7 +98,7 @@
     owner: root
     group: root
     mode: "0644"
-    backup: yes
+    backup: true
   notify:
     - Daemon reload
 
@@ -110,8 +110,8 @@
   notify:
     - Unseal vault
 
-- name: Flush handlers (restart vault, systemd reload daemon, unseal vault)
-  meta: flush_handlers
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
 
 - name: Create Vault log directory
   ansible.builtin.file:

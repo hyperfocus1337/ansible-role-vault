@@ -1,7 +1,7 @@
 ---
 - name: Daemon reload
   ansible.builtin.systemd:
-    daemon_reload: yes
+    daemon_reload: true
 
 - name: Stop vault
   ansible.builtin.service:
@@ -36,7 +36,7 @@
   loop: "{{ vault_unseal_keys[:3] }}"
   loop_control:
     label: "Unseal keys are hidden intentionally"
-  no_log: yes
+  no_log: true
   register: vault_unseal
   changed_when:
     - vault_unseal.status == 200
